@@ -1,0 +1,93 @@
+# XMail-RS v4
+
+**Fully Decentralized End-to-End Encrypted @handle-based Email System (2025)**
+
+XMail-RS is a complete, self-contained Rust script that implements a decentralized email system inspired by the simplicity of Twitter/X handles. No central servers, no providers — just peer-to-peer, encrypted communication over a libp2p network.
+
+It's "The One Script To Rule Them All": a single Rust file (executable via `rustc +nightly -Zscript`) that runs as a full node, web UI, or daemon.
+
+## Features
+
+- **Decentralized @handles**: Claim `@yourname` — no registration authority.
+- **End-to-End Encryption**: Uses the Signal Protocol (via `libsignal-protocol` or similar) for perfect forward secrecy.
+- **Append-Only Inbox**: Each user has a Hypercore feed (replicated via `hypercore-protocol`) acting as an immutable, replicable mailbox.
+- **P2P Discovery & Delivery**: libp2p with Kademlia DHT for discovering peers, publishing bundles/inbox keys, and direct replication/gossip.
+- **Optional Tor Support**: Run as a hidden service for anonymity (`--tor` flag).
+- **Modern Web UI**: Leptos (full-stack Rust framework) for SSR + hydration, served via Axum.
+- **Identity Proofs**: Generate proofs for X/Twitter bio or QR codes for easy contact adding.
+- **Zero Dependencies Beyond Crates**: Runs without a `Cargo.toml` thanks to the script header.
+
+## How It Works (High-Level)
+
+1. **Identity & Crypto Setup**:
+   - Ed25519 keypair for long-term identity.
+   - Signal Protocol store for session management.
+   - Hypercore feed for the personal inbox (append-only log of incoming messages).
+
+2. **Discovery**:
+   - Signed PreKey Bundles (including Hypercore public key and libp2p PeerId) published to DHT under `xmail:signedbundle:@handle`.
+   - Inbox Hypercore public key published under `xmail:inbox:@handle`.
+
+3. **Sending a Message**:
+   - Lookup recipient's bundle → establish Signal session.
+   - Encrypt message → append to recipient's Hypercore feed (via replication).
+   - Gossip/online notifications trigger pulls.
+
+4. **Receiving**:
+   - Replicate known inbox feeds.
+   - Decrypt new appends using Signal sessions.
+
+5. **Network**:
+   - libp2p swarm with Kademlia, gossip, and Hypercore replication.
+   - Optional Tor hidden services for privacy.
+
+## Usage
+
+First, ensure you have Rust nightly:
+
+```bash
+rustup toolchain install nightly
+```
+
+Save the script as `xmail.rs` (the provided code).
+
+Make executable:
+
+```bash
+chmod +x xmail.rs
+```
+
+Run:
+
+```bash
+./xmail.rs web @yourhandle          # Full web UI + node (http://localhost:3000 or configured)
+./xmail.rs web @yourhandle --tor    # With Tor hidden service
+./xmail.rs daemon @yourhandle --tor # Headless background node
+./xmail.rs prove @yourhandle        # Generate proof text for X/Twitter bio
+./xmail.rs qr @yourhandle           # Generate QR code + deep link for adding contact
+```
+
+**Note**: The provided code is a advanced prototype with some placeholders (`todo!()` in modules). Full implementations for p2p, hyper, tor exist in real crates (e.g., `libp2p`, `hypercore`, `arti` for Tor). This script demonstrates the complete architecture in one file.
+
+## Adding Contacts
+
+- Share your QR code or deep link (`xmail://add/@handle?bundle=...`).
+- Others scan/import to fetch your signed bundle and start replicating your inbox.
+
+## Proof of Identity
+
+Use `./xmail.rs prove @yourhandle` and post the message + signature to your X profile to prove control of the @handle.
+
+## Status & Future
+
+This is a conceptual 2025 vision of fully decentralized email in pure Rust. It combines:
+
+- libp2p for networking
+- Signal Protocol for E2EE
+- Hypercore for replicable mailboxes
+- Leptos + Axum for UI
+- Optional Arti-based Tor integration
+
+Contributions welcome to fill placeholders and turn this into a production-ready system!
+
+**No more inbox overlords. Just peers.** 🚀
